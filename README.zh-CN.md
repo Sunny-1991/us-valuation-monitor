@@ -1,133 +1,181 @@
 # US Valuation Monitor（美国股市估值监测）
 
-面向美国市场的估值监测项目，目标是提供**专业、可视化强、清新大气**的双端体验（Web + 微信小程序）。
+US Valuation Monitor 是一个面向美股主要指数与标普行业板块的估值监测平台，包含 Web 展示端、轻量 API 服务和可日更的数据管线。
 
-当前阶段以 **Web 端完整可用** 为主，小程序工程已保留并可在后续继续补齐。
+项目强调“可长期运行”的工程化能力：
+- 可自动日更（GitHub Actions）
+- 多数据源融合与降级回退
+- 一份标准化数据同时供 Web/API 使用
 
-## 1. 项目定位
+## 1）你将获得什么
 
-- 覆盖对象：核心美股指数 + S&P 11 行业映射（共 17 个监测对象）
-- 核心指标：`pe_ttm`、`pe_forward`、`pb`、`earnings_yield`、`erp_proxy`
-- 统计衍生：历史百分位、Z-Score、估值状态分层
-- 数据频率：交易日收盘后更新（本地/轻量云函数模式）
+### 功能能力
+- 覆盖 17 个美股监测对象（核心指数 + 标普 11 行业代理）
+- 多指标跟踪：`pe_ttm`、`pe_forward`、`pb`、`earnings_yield`、`erp_proxy`
+- 历史分位和状态识别：全历史 / 10年 / 5年分位、估值区间、Z-Score
+- 多指数对比分析（默认：标普500、纳指100、道琼斯30）
+- 自选与提醒状态的后端持久化
 
-## 2. 当前完成度
+### 技术能力
+- 一条命令构建标准化快照数据
+- `packages/core` 统一指标与统计口径，前后端一致
+- API 提供元信息、快照、时序、热力、自选、提醒、日更触发接口
+- GitHub Actions 每日自动刷新并在数据变更时自动提交
 
-- Web：已完成主站功能、交互与图表系统（深色机构风）
-- 数据：已接入真实免费数据管线，并支持失败时历史快照回退
-- API：提供统一接口，Web/小程序可共用
-- 小程序：已具备工程结构与页面骨架，后续可继续迭代
-
-> 说明：Web 端当前版本聚焦估值分析与展示，不包含提醒中心 UI。
-
-## 3. 核心能力
-
-- 首页指数卡片（核心指数优先 + 行业指数）
-- 指数详情双图联动（估值主图 + 百分位副图）
-- 滑块/轨道缩放，支持丝滑时间范围同步
-- 多指数对比分析（默认：标普500、道指、纳指100）
-- 本地化偏好设置（分组、对比区间、自选等）
-- 图表线尾数值标注（同色、可读性优化）
-
-## 4. 数据来源与方法
-
-当前数据源采用“真实免费源优先、多源融合”：
-
-- 价格序列：Stooq（ETF/指数代理）
-- 美债10Y：FRED `DGS10`
-- 估值补充：Trendonify / Multpl / StockAnalysis / 其他可用公开源
-
-### 关于纳斯达克100 `forward PE`（互联网泡沫期）
-
-已专门修正 2000-2002 区间的真实性问题：
-
-- 引入 MacroMicro NDX forward PE 对应序列（`id=15115`）作为优先真源
-- 在外部站点反爬/波动场景下，保留该关键阶段的可信保底序列
-- 避免出现“与点位机械同步”的伪估值波形
-
-## 5. 技术架构
+## 2）仓库结构
 
 ```text
 us-valuation-monitor/
 ├─ apps/
-│  ├─ web/                # Web 页面（index.html / app.js / styles.css）
-│  └─ miniprogram/        # 小程序工程骨架
+│  ├─ web/                         # Web 页面（HTML/CSS/JS）
+│  └─ miniprogram/                 # 微信小程序骨架
+├─ cloudfunctions/                 # Node HTTP API 服务
+│  ├─ server.ts                    # 服务入口（HOST/PORT）
+│  └─ src/app.ts                   # 路由与运行时存储
 ├─ packages/
-│  ├─ core/               # 共享 types、指标计算、统计逻辑
-│  └─ data-pipeline/      # 抓取、清洗、标准化快照生成
-├─ cloudfunctions/        # 轻量 API（Node http server）
+│  ├─ core/                        # types、指标计算、统计规则
+│  └─ data-pipeline/               # 抓取、融合、清洗、快照生成
 ├─ data/
-│  ├─ standardized/       # 估值历史快照
-│  └─ runtime/            # 运行时状态（watchlist/alerts 等）
-├─ package.json
-└─ tsconfig.json
+│  ├─ bootstrap/                   # 人工校验过的引导数据（CSV）
+│  ├─ runtime/                     # 自选/提醒运行时 JSON
+│  └─ standardized/
+│     └─ valuation-history.json    # 主输出数据文件
+├─ .github/workflows/
+│  └─ daily-data-refresh.yml       # 每日自动更新工作流
+└─ package.json
 ```
 
-## 6. 本地启动
+## 3）数据策略与质量控制
 
-在项目根目录执行：
+项目采用“**多源融合 + 可靠性约束**”的数据策略。
+
+### 主要来源类别
+- 指数/ETF 价格代理：Stooq
+- 美国 10Y 国债收益率：FRED（`DGS10`）
+- 估值历史补充：MacroMicro、Trendonify 及其他公开可用来源
+
+### 关键实现说明
+- 标普500前瞻市盈率（Forward PE）包含 MacroMicro 引导序列，文件为 `data/bootstrap/sp500-forward-pe-macromicro.csv`。
+- 每个指数的前瞻估值起始可用日由 `forwardStartDate` 标记，API 会在查询时严格处理。
+- TTM PE 在锚点区间内不是“长区间纯线性插值”，而是**结合交易日收盘路径重建**：
+  - 在有效锚点之间按每日价格波动推导估值路径
+  - 避免出现不符合市场节奏的“过度平滑下滑线条”
+
+## 4）环境要求
+
+- Git
+- Node.js（建议 **v25**，与 CI 保持一致）
+- Python 3（`npm run start:web` 通过 Python 启动静态服务）
+
+## 5）快速开始
 
 ```bash
-cd "/Users/coattail/Documents/New project/us-valuation-monitor"
-```
-
-### 6.1 构建数据快照
-
-```bash
+git clone https://github.com/Sunny-1991/us-valuation-monitor.git
+cd us-valuation-monitor
 npm run build:data
-```
-
-输出文件：
-
-- `data/standardized/valuation-history.json`
-
-### 6.2 启动 Web 预览
-
-```bash
 npm run start:web
 ```
 
-浏览地址：
-
+打开 Web：
 - `http://127.0.0.1:9030/apps/web/`
 
-### 6.3 启动 API（可选）
+可选启动 API：
 
 ```bash
 npm run start:api
 ```
 
-API 地址：
-
+默认 API 地址：
 - `http://127.0.0.1:9040`
 
-## 7. API 概览
+## 6）脚本说明
 
-- `GET /api/meta`
-- `GET /api/snapshot`
-- `GET /api/series?indexId=&metric=&from=&to=`
+| 命令 | 用途 |
+| --- | --- |
+| `npm run build:data` | 抓取并融合数据，输出 `data/standardized/valuation-history.json` |
+| `npm run start:web` | 启动 9030 端口静态服务 |
+| `npm run start:api` | 启动 API（默认 `127.0.0.1:9040`） |
+| `npm test` | 运行 core + API 测试 |
+
+## 7）API 接口
+
+基地址：`http://127.0.0.1:9040`
+
+### 健康检查与元信息
+- `GET /healthz`：服务存活检查
+- `GET /api/meta`：数据元信息、指数列表、可用区间、`forwardStartDate`
+
+### 快照与时序
+- `GET /api/snapshot?group=core|sector|all`
+- `GET /api/series?indexId=<id>&metric=pe_ttm|pe_forward|pb|earnings_yield|erp_proxy&from=YYYY-MM-DD&to=YYYY-MM-DD`
 - `GET /api/heatmap?group=core|sector|all`
+
+### 自选与提醒
 - `GET /api/watchlist`
 - `POST /api/watchlist`
 - `GET /api/alerts`
 - `POST /api/alerts/ack`
-- `POST /api/jobs/daily-update`
-- `POST /api/auth/dev-login`
-- `POST /api/auth/wechat-login`（占位）
 
-## 8. 测试
+### 任务与认证
+- `POST /api/jobs/daily-update`：手动触发一次完整日更
+- `POST /api/auth/dev-login`：获取开发态 token
+- `POST /api/auth/wechat-login`：当前返回 `501`（待小程序 AppID 打通）
+
+用户维度接口可携带请求头：
+- `X-Dev-Token: dev-token:<userId>`
+
+## 8）每日自动更新（GitHub Actions）
+
+工作流文件：
+- `.github/workflows/daily-data-refresh.yml`
+
+当前策略：
+- 定时触发（`cron: 15 13 * * *`）+ 手动触发
+- 执行 `npm run build:data`
+- 仅在 `data/standardized/valuation-history.json` 有变化时提交并推送
+
+手动运行步骤：
+1. 打开仓库的 **Actions**
+2. 选择 **Daily Data Refresh**
+3. 点击 **Run workflow**
+
+## 9）数据文件与运行时文件
+
+- 标准化主数据：`data/standardized/valuation-history.json`
+- 自选存储：`data/runtime/watchlists.json`
+- 提醒存储：`data/runtime/alerts.json`
+- 提醒状态：`data/runtime/alert-state.json`
+- 标普500前瞻 PE 引导数据：`data/bootstrap/sp500-forward-pe-macromicro.csv`
+
+## 10）测试与验证
+
+运行测试：
 
 ```bash
 npm test
 ```
 
-当前覆盖：
+建议在重建数据后做一次接口冒烟：
 
-- 核心统计与规则逻辑
-- API 关键集成链路
+```bash
+curl -sS http://127.0.0.1:9040/healthz
+curl -sS http://127.0.0.1:9040/api/meta
+curl -sS "http://127.0.0.1:9040/api/series?indexId=sp500&metric=pe_ttm"
+```
 
-## 9. 后续建议
+## 11）常见问题排查
 
-- 小程序端视觉与交互补齐（与 Web 风格统一）
-- forward PE 数据源持续扩展与精度校准
-- 数据更新任务、告警闭环与稳定性强化
+- 出现 `ERR_UNKNOWN_FILE_EXTENSION .ts`：
+  - 升级 Node.js（建议 v25）
+- Web 可打开但数据不是最新：
+  - 重新执行 `npm run build:data`，检查 `data/standardized/valuation-history.json` 更新时间
+- API 返回 `Invalid indexId` / `Invalid metric`：
+  - 核对参数是否在支持列表中
+- 某段估值看起来异常平滑：
+  - 检查该区间锚点覆盖和源数据可用性；当前管线会在有效锚点区间使用收盘路径进行重建
+
+## 12）后续方向
+
+- 继续增强各指数长期估值历史覆盖质量
+- 将小程序从骨架迭代到与 Web 同等级可用
+- 补强提醒中心与运行监控能力

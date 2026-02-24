@@ -1,131 +1,181 @@
 # US Valuation Monitor
 
-A US equity valuation monitoring project designed for a **professional, visual-first, and clean institutional UX** across **Web + WeChat Mini Program**.
+US Valuation Monitor is a market valuation platform for major US indices and S&P 500 sectors. It combines a production-oriented Web interface, a lightweight API service, and a data pipeline that rebuilds valuation history from multiple public data sources.
 
-At this stage, the **Web client is the production-ready focus**, while the Mini Program scaffold is included for the next iteration.
+The project is built to be practical in real operations:
+- daily-refresh capable (GitHub Actions)
+- robust fallback behavior when one source degrades
+- unified standardized dataset for both Web and API consumers
 
-## 1. Scope
+## 1) What You Get
 
-- Coverage: major US market indices + S&P 11 sector mapping (17 tracked assets)
-- Core metrics: `pe_ttm`, `pe_forward`, `pb`, `earnings_yield`, `erp_proxy`
-- Derived analytics: historical percentiles, Z-score, valuation regime classification
-- Update cadence: post-close daily refresh (local/light-cloud workflow)
+### Product capabilities
+- Cross-index valuation monitoring for 17 US market proxies (core indices + 11 sectors)
+- Multi-metric coverage: `pe_ttm`, `pe_forward`, `pb`, `earnings_yield`, `erp_proxy`
+- Historical context: full-history / 10Y / 5Y percentiles, valuation regime, and z-score
+- Comparison workflow for key indices (default: S&P 500, Nasdaq 100, Dow 30)
+- Watchlist + alert-state persistence via API runtime store
 
-## 2. Current Delivery Status
+### Technical capabilities
+- One-command dataset build from source adapters and normalization logic
+- Shared core package for metric/statistical consistency across clients
+- API endpoints for metadata, snapshots, time series, heatmap, watchlist, alerts, and daily job triggering
+- Scheduled daily data refresh with automatic commit-and-push on data change
 
-- Web: complete interaction and charting workflow in place
-- Data: real free-source ingestion pipeline with historical fallback
-- API: unified endpoints usable by both Web and Mini Program
-- Mini Program: project structure and pages are scaffolded for follow-up work
-
-> Note: the current Web build focuses on valuation analytics/visualization and does not include the alert-center UI.
-
-## 3. Key Product Capabilities
-
-- Index snapshot cards (core indices first, then sectors)
-- Detail page with dual visualization modules (valuation + percentile trend)
-- Slider/track based time-window controls with smooth synchronized updates
-- Multi-index comparison (default: S&P 500, Dow Jones, Nasdaq-100)
-- Persistent local preferences (grouping, compare range, watchlist)
-- End-of-line labels on chart series for better readability
-
-## 4. Data Sources & Methodology
-
-The pipeline follows a “real free data first, multi-source merge” strategy:
-
-- Price history: Stooq (index/ETF proxy)
-- US 10Y yield: FRED `DGS10`
-- Valuation supplements: Trendonify / Multpl / StockAnalysis / other public sources
-
-### Nasdaq-100 forward PE (dot-com period fix)
-
-The 2000-2002 forward PE quality issue has been explicitly fixed:
-
-- MacroMicro NDX forward PE series (`id=15115`) is prioritized as a real source
-- A trusted fallback block is retained for this critical period under anti-bot instability
-- Prevents synthetic behavior where valuation lines mechanically mirror index price
-
-## 5. Repository Structure
+## 2) Repository Layout
 
 ```text
 us-valuation-monitor/
 ├─ apps/
-│  ├─ web/                # Web app (index.html / app.js / styles.css)
-│  └─ miniprogram/        # WeChat Mini Program scaffold
+│  ├─ web/                         # Web client (HTML/CSS/JS)
+│  └─ miniprogram/                 # WeChat Mini Program scaffold
+├─ cloudfunctions/                 # Node HTTP API server
+│  ├─ server.ts                    # entry point (HOST/PORT)
+│  └─ src/app.ts                   # routes + runtime stores
 ├─ packages/
-│  ├─ core/               # shared types, metrics, statistical logic
-│  └─ data-pipeline/      # ingestion, normalization, snapshot generation
-├─ cloudfunctions/        # lightweight Node API server
+│  ├─ core/                        # shared types, metrics, percentiles, rules
+│  └─ data-pipeline/               # fetch/merge/normalize/build dataset
 ├─ data/
-│  ├─ standardized/       # valuation history snapshots
-│  └─ runtime/            # runtime states (watchlist/alerts...)
-├─ package.json
-└─ tsconfig.json
+│  ├─ bootstrap/                   # curated bootstrap datasets (CSV)
+│  ├─ runtime/                     # watchlist / alert runtime JSON files
+│  └─ standardized/
+│     └─ valuation-history.json    # main generated dataset
+├─ .github/workflows/
+│  └─ daily-data-refresh.yml       # scheduled refresh workflow
+└─ package.json
 ```
 
-## 6. Local Run
+## 3) Data Strategy and Quality Controls
+
+This project follows a **multi-source merge with reliability guardrails** strategy.
+
+### Main source categories
+- Price and market proxy series: Stooq
+- US 10Y yield: FRED (`DGS10`)
+- Valuation history supplements: MacroMicro, Trendonify, and other public references used by adapters
+
+### Important implementation notes
+- S&P 500 forward PE includes a pinned bootstrap series from MacroMicro in `data/bootstrap/sp500-forward-pe-macromicro.csv`.
+- Forward PE availability is tracked per index via `forwardStartDate` and enforced in API responses.
+- TTM PE reconstruction between sparse anchors is **close-aware**, not pure long-span linear interpolation:
+  - within valid anchor ranges, daily valuation path is reconstructed against actual trading-day close movements
+  - this preserves realistic day-to-day fluctuation instead of producing unnaturally smooth declines
+
+## 4) Prerequisites
+
+- Git
+- Node.js (recommended: **v25**, aligned with CI workflow)
+- Python 3 (used by `npm run start:web` to serve static files)
+
+## 5) Quick Start
 
 ```bash
-cd "/Users/coattail/Documents/New project/us-valuation-monitor"
-```
-
-### 6.1 Build/refresh dataset
-
-```bash
+git clone https://github.com/Sunny-1991/us-valuation-monitor.git
+cd us-valuation-monitor
 npm run build:data
-```
-
-Output:
-
-- `data/standardized/valuation-history.json`
-
-### 6.2 Launch Web preview
-
-```bash
 npm run start:web
 ```
 
-Open:
-
+Open Web app:
 - `http://127.0.0.1:9030/apps/web/`
 
-### 6.3 Launch API (optional)
+Optional API server:
 
 ```bash
 npm run start:api
 ```
 
-API base URL:
-
+Default API base URL:
 - `http://127.0.0.1:9040`
 
-## 7. API Endpoints
+## 6) Script Reference
 
-- `GET /api/meta`
-- `GET /api/snapshot`
-- `GET /api/series?indexId=&metric=&from=&to=`
+| Command | Purpose |
+| --- | --- |
+| `npm run build:data` | Fetch/merge/normalize data and write `data/standardized/valuation-history.json` |
+| `npm run start:web` | Start static web server at port `9030` |
+| `npm run start:api` | Start API server (default `127.0.0.1:9040`) |
+| `npm test` | Run core + API test suites |
+
+## 7) API Reference
+
+Base URL: `http://127.0.0.1:9040`
+
+### Health and metadata
+- `GET /healthz` — liveness check
+- `GET /api/meta` — dataset meta, indices, ranges, and `forwardStartDate`
+
+### Snapshot and series
+- `GET /api/snapshot?group=core|sector|all`
+- `GET /api/series?indexId=<id>&metric=pe_ttm|pe_forward|pb|earnings_yield|erp_proxy&from=YYYY-MM-DD&to=YYYY-MM-DD`
 - `GET /api/heatmap?group=core|sector|all`
+
+### Watchlist and alerts
 - `GET /api/watchlist`
 - `POST /api/watchlist`
 - `GET /api/alerts`
 - `POST /api/alerts/ack`
-- `POST /api/jobs/daily-update`
-- `POST /api/auth/dev-login`
-- `POST /api/auth/wechat-login` (placeholder)
 
-## 8. Tests
+### Jobs and auth
+- `POST /api/jobs/daily-update` — trigger one full refresh in API runtime
+- `POST /api/auth/dev-login` — returns a development token
+- `POST /api/auth/wechat-login` — currently returns `501` placeholder until Mini Program AppID integration
+
+For user-scoped endpoints, pass header:
+- `X-Dev-Token: dev-token:<userId>`
+
+## 8) Daily Auto Refresh (GitHub Actions)
+
+Workflow file:
+- `.github/workflows/daily-data-refresh.yml`
+
+Current behavior:
+- Runs on schedule (`cron: 15 13 * * *`) and manual dispatch
+- Executes `npm run build:data`
+- Commits and pushes `data/standardized/valuation-history.json` **only when changed**
+
+To trigger manually:
+1. Open GitHub repository → **Actions**
+2. Select **Daily Data Refresh**
+3. Click **Run workflow**
+
+## 9) Dataset and Runtime Files
+
+- Main dataset: `data/standardized/valuation-history.json`
+- Runtime watchlists: `data/runtime/watchlists.json`
+- Runtime alerts: `data/runtime/alerts.json`
+- Alert states: `data/runtime/alert-state.json`
+- S&P 500 forward PE bootstrap: `data/bootstrap/sp500-forward-pe-macromicro.csv`
+
+## 10) Testing and Validation
+
+Run tests:
 
 ```bash
 npm test
 ```
 
-Current coverage includes:
+Recommended smoke checks after rebuilding data:
 
-- core metric/statistical rules
-- API integration essentials
+```bash
+curl -sS http://127.0.0.1:9040/healthz
+curl -sS http://127.0.0.1:9040/api/meta
+curl -sS "http://127.0.0.1:9040/api/series?indexId=sp500&metric=pe_ttm"
+```
 
-## 9. Next Steps
+## 11) Troubleshooting
 
-- finish Mini Program visual/interaction parity with the Web version
-- keep improving forward PE source coverage and calibration
-- strengthen scheduled updates, alert loop, and operational robustness
+- `ERR_UNKNOWN_FILE_EXTENSION .ts`:
+  - use a newer Node.js version (recommended v25)
+- Web loads but no fresh data:
+  - run `npm run build:data` again and verify `data/standardized/valuation-history.json`
+- API returns `Invalid indexId` / `Invalid metric`:
+  - check request parameters against supported index IDs and metrics
+- Unexpectedly flat valuation segments:
+  - verify source anchor coverage and rebuild dataset; the pipeline uses close-aware reconstruction inside valid ranges
+
+## 12) Roadmap
+
+- Continue hardening historical valuation coverage for all tracked indices
+- Expand Mini Program from scaffold to production parity with Web
+- Add richer alert center and operational monitoring
