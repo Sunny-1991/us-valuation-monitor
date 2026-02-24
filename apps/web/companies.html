@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>US Company Valuation Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Source+Serif+4:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260225-company-board-v2" />
+  </head>
+  <body data-theme="terminal">
+    <div class="site-bg"></div>
+    <div class="noise-layer"></div>
+    <div class="bg-layer"></div>
+    <div class="app-shell">
+      <header class="app-header panel hero-panel">
+        <div class="hero-main">
+          <p class="eyebrow">US VALUATION INTELLIGENCE</p>
+          <h1>美国企业估值监测台</h1>
+          <p class="subtitle">聚焦美股市值前100公司，支持卡片总览、公司详情与多公司对比分析。</p>
+        </div>
+        <div class="header-actions hero-actions">
+          <a id="back-to-index-btn" class="btn ghost board-switch-btn" href="./index.html">返回指数估值</a>
+          <div id="updated-chip" class="status-chip subtle">--</div>
+        </div>
+      </header>
+
+      <nav class="view-tabs panel">
+        <button class="tab is-active" data-view="overview" type="button">总览</button>
+        <button class="tab" data-view="detail" type="button">公司详情</button>
+        <button class="tab" data-view="compare" type="button">对比分析</button>
+        <button class="tab" data-view="settings" type="button">偏好设置</button>
+      </nav>
+
+      <section id="view-overview" class="view-panel is-active">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>企业估值卡片（Top 100）</h2>
+            <span id="snapshot-date" class="hint"></span>
+          </div>
+          <div class="toolbar-grid">
+            <label>
+              范围
+              <select id="overview-group-filter">
+                <option value="all">全部</option>
+                <option value="watchlist">仅自选</option>
+              </select>
+            </label>
+            <label>
+              排序
+              <select id="overview-sort-select">
+                <option value="market_cap_desc">市值从高到低</option>
+                <option value="percentile_desc">分位从高到低</option>
+                <option value="percentile_asc">分位从低到高</option>
+                <option value="pe_desc">PE 从高到低</option>
+                <option value="pb_desc">PB 从高到低</option>
+                <option value="name">名称 A-Z</option>
+              </select>
+            </label>
+            <label>
+              搜索
+              <input id="overview-search" type="text" placeholder="公司名称 / 股票代码" />
+            </label>
+          </div>
+          <div id="snapshot-grid" class="snapshot-grid"></div>
+          <div class="overview-footer">
+            <span id="overview-count-hint" class="hint"></span>
+            <button id="overview-load-more" class="btn ghost" type="button">展开更多</button>
+          </div>
+        </article>
+      </section>
+
+      <section id="view-detail" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>公司估值时序</h2>
+            <span id="detail-range" class="hint"></span>
+          </div>
+
+          <div class="detail-controls">
+            <label>
+              公司
+              <select id="detail-index"></select>
+            </label>
+            <label>
+              指标
+              <select id="detail-metric">
+                <option value="pe_ttm">PE (TTM)</option>
+                <option value="pe_forward">PE (Forward)</option>
+                <option value="pb">PB</option>
+                <option value="earnings_yield">Earnings Yield</option>
+              </select>
+            </label>
+            <div class="range-chip-group" id="detail-range-chips">
+              <button class="chip is-active" data-range="max" type="button">MAX</button>
+              <button class="chip" data-range="20y" type="button">20Y</button>
+              <button class="chip" data-range="10y" type="button">10Y</button>
+              <button class="chip" data-range="5y" type="button">5Y</button>
+              <button class="chip" data-range="3y" type="button">3Y</button>
+              <button class="chip" data-range="1y" type="button">1Y</button>
+            </div>
+            <button id="detail-refresh" class="btn" type="button">刷新图表</button>
+          </div>
+
+          <div class="detail-visual-grid">
+            <div class="detail-visual-main">
+              <div id="detail-chart" class="chart-large"></div>
+            </div>
+            <div class="detail-visual-side">
+              <div class="panel-title-row compact">
+                <h3>百分位走势</h3>
+                <span class="hint">全历史滚动百分位</span>
+              </div>
+              <div id="detail-percentile-chart" class="chart-medium"></div>
+              <div id="detail-percentile-track" class="percentile-track"></div>
+            </div>
+          </div>
+          <div id="detail-stats" class="detail-stats"></div>
+        </article>
+      </section>
+
+      <section id="view-compare" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>多公司对比</h2>
+            <span class="hint">同区间对齐展示原始估值走势</span>
+          </div>
+
+          <div class="compare-controls">
+            <label>
+              指标
+              <select id="compare-metric">
+                <option value="pe_ttm">PE (TTM)</option>
+                <option value="pe_forward">PE (Forward)</option>
+                <option value="pb">PB</option>
+                <option value="earnings_yield">Earnings Yield</option>
+              </select>
+            </label>
+            <label>
+              区间
+              <select id="compare-range">
+                <option value="max">MAX</option>
+                <option value="20y">20Y</option>
+                <option value="10y">10Y</option>
+                <option value="5y">5Y</option>
+                <option value="3y">3Y</option>
+                <option value="1y">1Y</option>
+              </select>
+            </label>
+            <div class="compare-date-range">
+              <label>
+                起始时间
+                <input id="compare-start-date" type="date" />
+              </label>
+              <label>
+                结束时间
+                <input id="compare-end-date" type="date" />
+              </label>
+              <button id="compare-reset-date" class="btn ghost compare-date-reset" type="button">清空日期</button>
+            </div>
+            <label class="inline-check">
+              <input id="compare-watchlist-only" type="checkbox" />
+              仅展示自选池
+            </label>
+            <button id="compare-apply" class="btn" type="button">应用对比</button>
+          </div>
+
+          <div id="compare-index-picker" class="compare-picker"></div>
+          <div id="compare-summary" class="compare-summary"></div>
+
+          <div class="compare-main-layout">
+            <div class="compare-line-panel panel soft">
+              <div class="panel-title-row compact">
+                <h3 id="compare-chart-title">对比走势 · PE (TTM)</h3>
+                <span class="hint">折线图数据口径与当前指标一致</span>
+              </div>
+              <div id="compare-chart" class="chart-large compare-chart-large"></div>
+            </div>
+            <div class="compare-side-panel panel soft">
+              <div class="panel-title-row compact">
+                <h3>当前横截面</h3>
+                <span class="hint">名称颜色与折线颜色一致</span>
+              </div>
+              <div class="table-wrap compare-table-wrap">
+                <table class="compare-table compare-cross-table">
+                  <thead>
+                    <tr>
+                      <th>公司</th>
+                      <th>当前值</th>
+                      <th>百分位</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compare-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="view-settings" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>偏好设置</h2>
+            <div class="action-inline">
+              <button id="settings-reset" class="btn ghost" type="button">恢复默认</button>
+              <button id="settings-save" class="btn" type="button">保存偏好</button>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="panel soft">
+              <h3>显示偏好（固定深色专业风）</h3>
+              <label>
+                总览默认范围
+                <select id="settings-default-group">
+                  <option value="all">全部</option>
+                  <option value="watchlist">仅自选</option>
+                </select>
+              </label>
+              <label>
+                对比默认范围
+                <select id="settings-default-compare-range">
+                  <option value="max">MAX</option>
+                  <option value="20y">20Y</option>
+                  <option value="10y">10Y</option>
+                  <option value="5y">5Y</option>
+                  <option value="3y">3Y</option>
+                  <option value="1y">1Y</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="panel soft">
+              <h3>自选公司池（用于总览筛选与对比快速选择）</h3>
+              <div id="watchlist-box" class="watchlist-box"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script type="module" src="./company-app.js?v=20260225-company-top100-v2"></script>
+  </body>
+</html>

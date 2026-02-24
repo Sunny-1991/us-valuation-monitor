@@ -89,6 +89,7 @@ const state = {
 const elements = {
   dataModeChip: document.getElementById("data-mode-chip"),
   updatedChip: document.getElementById("updated-chip"),
+  enterCompanyBoardBtn: document.getElementById("enter-company-board-btn"),
   tabButtons: [...document.querySelectorAll(".tab")],
   viewPanels: [...document.querySelectorAll(".view-panel")],
 
@@ -864,7 +865,7 @@ function renderDetailStats(fullRows, viewRows) {
     ["区间最低", metricCfg.percentage ? fmtSigned(min * 100, metricCfg.digits, true) : fmt(min, metricCfg.digits)],
     ["区间最高", metricCfg.percentage ? fmtSigned(max * 100, metricCfg.digits, true) : fmt(max, metricCfg.digits)],
     ["估值状态", regimeLabel(latest.regime)],
-    ["可得历史", `${fullRows[0].date} ~ ${fullRows[fullRows.length - 1].date}`],
+    ["数据区间", `${fullRows[0].date} ~ ${fullRows[fullRows.length - 1].date}`],
   ]
     .map(
       ([k, v]) => `
@@ -1796,6 +1797,21 @@ function applyDataSourceBadge(sourceText = "") {
 }
 
 function bindEvents() {
+  elements.enterCompanyBoardBtn?.addEventListener("click", (event) => {
+    const href = event.currentTarget?.getAttribute("href") || "./companies.html";
+    event.preventDefault();
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.location.href = href;
+      return;
+    }
+
+    document.body.classList.add("is-board-flipping");
+    window.setTimeout(() => {
+      window.location.href = href;
+    }, 320);
+  });
+
   elements.tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
       switchView(button.dataset.view);
