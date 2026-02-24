@@ -1,0 +1,19 @@
+<view class="container">
+  <view class="panel">
+    <view class="panel-title">{{indexId}} 估值曲线</view>
+    <picker mode="selector" range="{{metricOptions}}" range-key="label" bindchange="onMetricChange">
+      <view class="picker">指标：{{metricOptions[metricIndex].label}}</view>
+    </picker>
+    <view class="hint">可用区间：{{availableRangeText}}</view>
+    <canvas canvas-id="lineCanvas" style="width: 700rpx; height: 320rpx; margin-top: 14rpx"></canvas>
+  </view>
+
+  <view class="panel" wx:if="{{latest}}">
+    <view class="panel-title">当前状态</view>
+    <view class="row"><text>当前值</text><text>{{latest.value.toFixed(4)}}</text></view>
+    <view class="row"><text>分位(5Y)</text><text>{{latest.percentile5yText}}</text></view>
+    <view class="row"><text>分位(10Y)</text><text>{{latest.percentile10yText}}</text></view>
+    <view class="row"><text>分位(Full)</text><text>{{latest.percentileFullText}}</text></view>
+    <view class="row"><text>状态</text><text>{{latest.regime}}</text></view>
+  </view>
+</view>

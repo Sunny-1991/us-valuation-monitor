@@ -1,0 +1,18 @@
+<view class="container">
+  <view class="panel">
+    <view class="header-line">
+      <view class="panel-title">提醒列表</view>
+      <button class="btn" size="mini" bindtap="markAllRead">全部已读</button>
+    </view>
+    <view class="hint">未读 {{unreadCount}} 条</view>
+
+    <block wx:for="{{rows}}" wx:key="id">
+      <view class="alert-item {{item.read ? '' : 'unread'}}">
+        <view class="name">{{item.indexName}} · {{item.directionText}}</view>
+        <view class="hint">{{item.triggerDate}} · {{item.percentileText}} · {{item.severity}}</view>
+      </view>
+    </block>
+
+    <view wx:if="{{!rows.length}}" class="hint">暂无提醒</view>
+  </view>
+</view>

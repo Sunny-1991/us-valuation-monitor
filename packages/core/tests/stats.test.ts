@@ -1,0 +1,20 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import { percentileRank, zScore } from "../src/stats.ts";
+
+test("percentileRank returns expected ratio", () => {
+  const values = [10, 20, 30, 40, 50];
+  assert.equal(percentileRank(values, 40), 0.8);
+  assert.equal(percentileRank(values, 5), 0);
+  assert.equal(percentileRank([], 1), 0.5);
+});
+
+test("zScore stays zero when sigma is zero", () => {
+  assert.equal(zScore([10, 10, 10], 10), 0);
+});
+
+test("zScore positive for above mean", () => {
+  const z = zScore([10, 11, 12, 13, 14], 14);
+  assert.ok(z > 0.8);
+});

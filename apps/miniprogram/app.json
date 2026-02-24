@@ -1,0 +1,36 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/detail/detail",
+    "pages/alerts/alerts",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "navigationBarTitleText": "US估值监测",
+    "navigationBarBackgroundColor": "#f4fbff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4fbff"
+  },
+  "tabBar": {
+    "color": "#496174",
+    "selectedColor": "#16897f",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "总览"
+      },
+      {
+        "pagePath": "pages/alerts/alerts",
+        "text": "提醒"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

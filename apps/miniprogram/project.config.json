@@ -1,0 +1,18 @@
+{
+  "description": "US valuation monitor mini program",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "urlCheck": false,
+    "coverView": true
+  },
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "us-valuation-monitor-mini",
+  "libVersion": "3.3.1"
+}

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>US Valuation Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Noto+Sans+SC:wght@400;500;700&family=Source+Serif+4:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-theme="terminal">
+    <div class="site-bg"></div>
+    <div class="noise-layer"></div>
+    <div class="bg-layer"></div>
+    <div class="app-shell">
+      <header class="app-header panel hero-panel">
+        <div class="hero-main">
+          <p class="eyebrow">US VALUATION INTELLIGENCE</p>
+          <h1>美国股市估值监测台</h1>
+          <p class="subtitle">直接查看各指数估值卡片，点击后进入详情页查看深度分析。</p>
+        </div>
+        <div class="header-actions hero-actions">
+          <div id="updated-chip" class="status-chip subtle">--</div>
+        </div>
+      </header>
+
+      <nav class="view-tabs panel">
+        <button class="tab is-active" data-view="overview" type="button">总览</button>
+        <button class="tab" data-view="detail" type="button">指数详情</button>
+        <button class="tab" data-view="compare" type="button">对比分析</button>
+        <button class="tab" data-view="settings" type="button">偏好设置</button>
+      </nav>
+
+      <section id="view-overview" class="view-panel is-active">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>指数估值卡片</h2>
+            <span id="snapshot-date" class="hint"></span>
+          </div>
+          <div class="toolbar-grid">
+            <label>
+              组别
+              <select id="overview-group-filter">
+                <option value="all">全部</option>
+                <option value="core">核心指数</option>
+                <option value="sector">行业指数</option>
+                <option value="watchlist">仅自选</option>
+              </select>
+            </label>
+            <label>
+              排序
+              <select id="overview-sort-select">
+                <option value="attention">市场热度（核心→行业）</option>
+                <option value="percentile_desc">分位从高到低</option>
+                <option value="percentile_asc">分位从低到高</option>
+                <option value="pe_desc">PE 从高到低</option>
+                <option value="pb_desc">PB 从高到低</option>
+                <option value="name">名称 A-Z</option>
+              </select>
+            </label>
+            <label>
+              搜索
+              <input id="overview-search" type="text" placeholder="指数名称 / 代码" />
+            </label>
+          </div>
+          <div id="snapshot-grid" class="snapshot-grid"></div>
+        </article>
+      </section>
+
+      <section id="view-detail" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>指数估值时序</h2>
+            <span id="detail-range" class="hint"></span>
+          </div>
+
+          <div class="detail-controls">
+            <label>
+              指数
+              <select id="detail-index"></select>
+            </label>
+            <label>
+              指标
+              <select id="detail-metric">
+                <option value="pe_ttm">PE (TTM)</option>
+                <option value="pe_static">PE (Static)</option>
+                <option value="pe_forward">PE (Forward)</option>
+                <option value="pb">PB</option>
+                <option value="earnings_yield">Earnings Yield</option>
+                <option value="erp_proxy">ERP Proxy</option>
+              </select>
+            </label>
+            <div class="range-chip-group" id="detail-range-chips">
+              <button class="chip is-active" data-range="max" type="button">MAX</button>
+              <button class="chip" data-range="20y" type="button">20Y</button>
+              <button class="chip" data-range="10y" type="button">10Y</button>
+              <button class="chip" data-range="5y" type="button">5Y</button>
+              <button class="chip" data-range="3y" type="button">3Y</button>
+              <button class="chip" data-range="1y" type="button">1Y</button>
+            </div>
+            <button id="detail-refresh" class="btn" type="button">刷新图表</button>
+          </div>
+
+          <div class="detail-visual-grid">
+            <div class="detail-visual-main">
+              <div id="detail-chart" class="chart-large"></div>
+            </div>
+            <div class="detail-visual-side">
+              <div class="panel-title-row compact">
+                <h3>百分位走势</h3>
+                <span class="hint">全历史滚动百分位</span>
+              </div>
+              <div id="detail-percentile-chart" class="chart-medium"></div>
+              <div id="detail-percentile-track" class="percentile-track"></div>
+            </div>
+          </div>
+          <div id="detail-stats" class="detail-stats"></div>
+        </article>
+      </section>
+
+      <section id="view-compare" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>多指数对比</h2>
+            <span class="hint">同区间对齐展示原始估值走势</span>
+          </div>
+
+          <div class="compare-controls">
+            <label>
+              指标
+              <select id="compare-metric">
+                <option value="pe_ttm">PE (TTM)</option>
+                <option value="pe_static">PE (Static)</option>
+                <option value="pe_forward">PE (Forward)</option>
+                <option value="pb">PB</option>
+                <option value="earnings_yield">Earnings Yield</option>
+                <option value="erp_proxy">ERP Proxy</option>
+              </select>
+            </label>
+            <label>
+              区间
+              <select id="compare-range">
+                <option value="max">MAX</option>
+                <option value="20y">20Y</option>
+                <option value="10y">10Y</option>
+                <option value="5y">5Y</option>
+                <option value="3y">3Y</option>
+                <option value="1y">1Y</option>
+              </select>
+            </label>
+            <label class="inline-check">
+              <input id="compare-watchlist-only" type="checkbox" />
+              仅展示自选池
+            </label>
+            <button id="compare-apply" class="btn" type="button">应用对比</button>
+          </div>
+
+          <div id="compare-index-picker" class="compare-picker"></div>
+          <div id="compare-summary" class="compare-summary"></div>
+
+          <div id="compare-chart" class="chart-large"></div>
+          <div class="layout-two">
+            <div id="compare-latest-chart" class="chart-medium panel soft"></div>
+            <div class="panel soft">
+              <div class="panel-title-row compact">
+                <h3>当前横截面</h3>
+              </div>
+              <div class="table-wrap">
+                <table class="compare-table">
+                  <thead>
+                    <tr>
+                      <th>指数</th>
+                      <th>当前值</th>
+                      <th>百分位</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compare-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="view-settings" class="view-panel">
+        <article class="panel">
+          <div class="panel-title-row">
+            <h2>偏好设置</h2>
+            <div class="action-inline">
+              <button id="settings-reset" class="btn ghost" type="button">恢复默认</button>
+              <button id="settings-save" class="btn" type="button">保存偏好</button>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="panel soft">
+              <h3>显示偏好（固定深色专业风）</h3>
+              <label>
+                总览默认分组
+                <select id="settings-default-group">
+                  <option value="all">全部</option>
+                  <option value="core">核心指数</option>
+                  <option value="sector">行业指数</option>
+                  <option value="watchlist">仅自选</option>
+                </select>
+              </label>
+              <label>
+                对比默认范围
+                <select id="settings-default-compare-range">
+                  <option value="max">MAX</option>
+                  <option value="20y">20Y</option>
+                  <option value="10y">10Y</option>
+                  <option value="5y">5Y</option>
+                  <option value="3y">3Y</option>
+                  <option value="1y">1Y</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="panel soft">
+              <h3>自选指数池（用于总览筛选与对比快速选择）</h3>
+              <div id="watchlist-box" class="watchlist-box"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

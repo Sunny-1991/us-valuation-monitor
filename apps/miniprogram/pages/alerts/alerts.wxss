@@ -1,0 +1,22 @@
+.header-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alert-item {
+  margin-top: 12rpx;
+  padding: 12rpx;
+  border-radius: 14rpx;
+  border: 1rpx solid rgba(32, 76, 103, 0.18);
+}
+
+.alert-item.unread {
+  border-color: rgba(20, 152, 136, 0.55);
+  background: rgba(21, 153, 137, 0.06);
+}
+
+.name {
+  font-size: 28rpx;
+  font-weight: 700;
+}

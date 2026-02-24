@@ -1,0 +1,29 @@
+<view class="container">
+  <view class="panel">
+    <view class="panel-title">估值快照</view>
+    <view class="hint">{{generatedAt ? '更新于 ' + generatedAt : '加载中...'}}</view>
+    <block wx:for="{{snapshotRows}}" wx:key="indexId">
+      <view class="card" data-index-id="{{item.indexId}}" bindtap="openDetail">
+        <view>
+          <view class="name">{{item.displayName}}</view>
+          <view class="hint">{{item.symbol}}</view>
+        </view>
+        <view class="numbers">
+          <view>PE {{item.pe_ttm.toFixed(2)}}</view>
+          <view>静态PE {{item.pe_static.toFixed(2)}}</view>
+          <view>分位 {{item.percentileText}}</view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <view class="panel">
+    <view class="panel-title">热力矩阵（Full分位）</view>
+    <block wx:for="{{heatmapRows}}" wx:key="indexId">
+      <view class="heat-row">
+        <view class="heat-name">{{item.displayName}}</view>
+        <view class="heat-value">{{item.percentileText}}</view>
+      </view>
+    </block>
+  </view>
+</view>

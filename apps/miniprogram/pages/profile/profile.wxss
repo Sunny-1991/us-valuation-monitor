@@ -1,0 +1,17 @@
+.input {
+  border: 1rpx solid rgba(38, 86, 113, 0.2);
+  border-radius: 12rpx;
+  padding: 10rpx;
+  margin-top: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.watch-item {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin: 8rpx 0;
+  padding: 8rpx;
+  border: 1rpx solid rgba(41, 86, 110, 0.17);
+  border-radius: 12rpx;
+}
